@@ -3,73 +3,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.getElementById('urlInput');
     const errorMessage = document.getElementById('errorMessage');
     const loadingSpinner = document.getElementById('loadingSpinner');
+    const embedContainer = document.getElementById('embedContainer');
+    const contentEmbed = document.getElementById('contentEmbed');
 
-    urlForm.addEventListener('submit', async function(e) {
+    // Handle form submission
+    urlForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        // Reset states
+        // Clear previous error
         errorMessage.classList.add('d-none');
+
+        const url = urlInput.value.trim();
+
+        if (!url) {
+            showError('Please enter a URL');
+            return;
+        }
+
+        if (!isValidUrl(url)) {
+            showError('Invalid URL format');
+            return;
+        }
+
+        // Show loading spinner
         loadingSpinner.classList.remove('d-none');
 
-        const formData = new FormData();
-        formData.append('url', urlInput.value);
-
-        try {
-            const response = await fetch('/validate', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.valid) {
-                // Create new window with about:blank
-                const newWindow = window.open('about:blank', '_blank');
-                if (newWindow) {
-                    // Write embed content to the new window
-                    newWindow.document.write(`
-                        <html>
-                            <head>
-                                <title>embeddddr - Embedded Content</title>
-                                <style>
-                                    body, html {
-                                        margin: 0;
-                                        padding: 0;
-                                        width: 100%;
-                                        height: 100%;
-                                        overflow: hidden;
-                                    }
-                                    embed {
-                                        width: 100%;
-                                        height: 100%;
-                                        border: none;
-                                    }
-                                </style>
-                            </head>
-                            <body>
-                                <embed src="${data.url}" type="text/html">
-                                <script>
-                                    document.documentElement.requestFullscreen().catch(err => console.log('Fullscreen request failed'));
-                                </script>
-                            </body>
-                        </html>
-                    `);
-                    newWindow.document.close();
-                } else {
-                    errorMessage.textContent = 'Pop-up was blocked. Please allow pop-ups for this site.';
-                    errorMessage.classList.remove('d-none');
-                }
-            } else {
-                errorMessage.textContent = data.error;
-                errorMessage.classList.remove('d-none');
-            }
-        } catch (error) {
-            errorMessage.textContent = 'An error occurred. Please try again.';
-            errorMessage.classList.remove('d-none');
-        } finally {
+        // Embed the URL (with a small delay to show the spinner)
+        setTimeout(() => {
+            embedUrl(url);
             loadingSpinner.classList.add('d-none');
-        }
+        }, 500);
     });
+
+    // Validate URL format
+    function isValidUrl(url) {
+        try {
+            const parsedUrl = new URL(url);
+            return ['http:', 'https:'].includes(parsedUrl.protocol);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Show error message
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.remove('d-none');
+    }
+
+    // Embed URL in iframe
+    function embedUrl(url) {
+        contentEmbed.src = url;
+        embedContainer.classList.remove('d-none');
+    }
 
     // Add input validation listener
     urlInput.addEventListener('input', function() {
